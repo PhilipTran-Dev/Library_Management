@@ -46,11 +46,13 @@ public class Users {
     @ManyToOne
     @JoinColumn(name = "unit_id", nullable = true)
     private Unit unit;
+    @Enumerated(EnumType.STRING)
+    private Provider provider; // it relative in signing up with google or manual register at the first time
     public Users() {
 
     }
 
-    public Users(Long id, String googleId, String email, String password, String fullName, String phoneNumber, String address, String userStatus, Unit unit, LocalDate dateOfBirth, Roles roles, List<BorrowRecord> borrowRecords, List<BorrowRequest> borrowRequests, List<PinBooks> pinBooksList) {
+    public Users(Long id, String googleId, String email, String password, String fullName, String phoneNumber, String address, String userStatus, Unit unit, LocalDate dateOfBirth, Roles roles, List<BorrowRecord> borrowRecords, List<BorrowRequest> borrowRequests, List<PinBooks> pinBooksList, Provider provider) {
         this.id = id;
         this.googleId = googleId;
         this.email = email;
@@ -65,6 +67,8 @@ public class Users {
         this.borrowRecords = borrowRecords;
         this.borrowRequests = borrowRequests;
         this.pinBooksList = pinBooksList;
+        this.provider = provider;
+
     }
 
     public String getAddress() {
@@ -177,5 +181,13 @@ public class Users {
 
     public void setUserStatus(String userStatus) {
         this.userStatus = userStatus;
+    }
+
+    public Provider getProvider() {
+        return provider;
+    }
+
+    public void setProvider(Provider provider) {
+        this.provider = provider;
     }
 }

@@ -1,5 +1,6 @@
 package Project1.com.LibraryManagement.Service;
 
+import Project1.com.LibraryManagement.Entity.Provider;
 import Project1.com.LibraryManagement.Entity.Roles;
 import Project1.com.LibraryManagement.Entity.Unit;
 import Project1.com.LibraryManagement.Entity.Users;
@@ -44,13 +45,21 @@ public class CustomOAuth2UserServiceImpl implements CustomOAuth2UserService {
             newUser.setPhoneNumber(null);
             newUser.setDateOfBirth(null);
             newUser.setUnit(null);
+            newUser.setProvider(Provider.GOOGLE);
             newUser.setUserStatus("Hoạt động");
             newUser.setRoles(Roles.USERS);
+
 
             userRepos.save(newUser);
             System.out.println("Created new Google user: " + email);
         }
         else {
+            Users users = existingUser.get();
+            if(users.getGoogleId() == null){
+                users.setGoogleId(googleId);
+                userRepos.save(users);
+                System.out.println("Linked Google account to existing user: " + email);
+            }
             System.out.println("User already exists, skip insert: " + email);
         }
 

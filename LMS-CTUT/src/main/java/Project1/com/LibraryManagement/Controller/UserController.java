@@ -35,6 +35,7 @@ import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/user")
@@ -147,30 +148,40 @@ public class UserController {
             return "user/verifyOtp";
         }
 
-        Users users = new Users();
-        users.setEmail(userInfoDTO.getEmail());
-        users.setPassword(passwordEncoder.encode(userInfoDTO.getPassword()));
-        users.setFullName(userInfoDTO.getFullName());
-        users.setPhoneNumber(userInfoDTO.getPhoneNumber());
-        users.setAddress(userInfoDTO.getAddress());
-        users.setDateOfBirth(userInfoDTO.getDateOfBirth());
-        users.setRoles(Roles.USERS);
-        Unit unit = unitRepos.findById(userInfoDTO.getUnitId())
-                .orElseThrow(() -> new RuntimeException("Unit not found"));
-        users.setUnit(unit);
-
-
-        try {
-            userService.saveUser(users);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Lỗi chi tiết: " + e.getMessage());
-
-            redirectAttributes.addFlashAttribute("Error", "Lỗi hệ thống: Không thể lưu thông tin người dùng. Vui lòng thử lại.");
-
-            return "redirect:/user/register";
+        Users existingUser = usersRepos.findByEmail(email).orElse(null);
+        if(existingUser != null){
+            if(existingUser.getProvider() == Provider.GOOGLE){
+                existingUser.setAddress(userInfoDTO.getAddress());
+                existingUser.setDateOfBirth(userInfoDTO.getDateOfBirth());
+                existingUser.setPassword(passwordEncoder.encode(userInfoDTO.getPassword()));
+                existingUser.setPhoneNumber(userInfoDTO.getPhoneNumber());
+                Unit unit = unitRepos.findById(userInfoDTO.getUnitId())
+                        .orElseThrow(() -> new RuntimeException("Unit not found"));
+                existingUser.setUnit(unit);
+                userService.saveUser(existingUser);
+            }
+            else {
+                redirectAttributes.addFlashAttribute("ErrorExistsEmail",
+                        "Account already exists. Please login.");
+                return "redirect:/user/register";
+            }
         }
-
+        else {
+            Users users = new Users();
+            users.setEmail(userInfoDTO.getEmail());
+            users.setPassword(passwordEncoder.encode(userInfoDTO.getPassword()));
+            users.setFullName(userInfoDTO.getFullName());
+            users.setPhoneNumber(userInfoDTO.getPhoneNumber());
+            users.setAddress(userInfoDTO.getAddress());
+            users.setDateOfBirth(userInfoDTO.getDateOfBirth());
+            users.setGoogleId(userInfoDTO.getGoogleId());
+            users.setRoles(Roles.USERS);
+            users.setProvider(Provider.LOCAL);
+            Unit unit = unitRepos.findById(userInfoDTO.getUnitId())
+                    .orElseThrow(() -> new RuntimeException("Unit not found"));
+            users.setUnit(unit);
+            userService.saveUser(users);
+        }
         emailOtpStorageService.removeOtp(email);
         session.removeAttribute("REGISTER_DATA");
 
@@ -198,9 +209,15 @@ public class UserController {
             return "user/register";
         }
 
-        if (usersRepos.existsByEmail(email)) {
-            redirectAttributes.addFlashAttribute("ErrorExistsEmail", "This Account Already Exists");
-            return "user/register";
+        Optional<Users> existingUserOpt = usersRepos.findByEmail(email);
+        if (existingUserOpt.isPresent()) {
+            Users existingUser = existingUserOpt.get();
+
+            if (existingUser.getProvider() == Provider.LOCAL) {
+                redirectAttributes.addFlashAttribute("ErrorExistsEmail",
+                        "Account already exists. Please login.");
+                return "user/register";
+            }
         }
 
         LocalDate dob;

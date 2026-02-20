@@ -15,4 +15,5 @@ public class UserInfoDTO {
     private String address;
     private LocalDate dateOfBirth;
     private Long unitId;
+    private String googleId;
 }
